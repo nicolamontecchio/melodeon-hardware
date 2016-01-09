@@ -1,17 +1,29 @@
+#include <SoftwareSerial.h>
+
 int PL_ = 4;
-int CP = 2;
-int Q7 = 7;
+int CP = 5;
+int Q7 = 6;
+int SERIAL_RX = 2;
+int SERIAL_TX = 3;
+
+
+SoftwareSerial midiSerial(SERIAL_RX, SERIAL_TX); // digital pins that we'll use for soft serial RX & TX
 
 int TESTLED = 10;
+int LOWEST_MIDI_NOTE = 29;
+
+void noteOn(byte cmd, byte data1, byte data2) {
+  midiSerial.write(cmd);
+  midiSerial.write(data1);
+  midiSerial.write(data2);
+}
 
 void setup() {
-  // put your setup code here, to run once:
-  Serial.begin(9600);      // open the serial port at 9600 bps:  
-
+  Serial.begin(9600);   
+  midiSerial.begin(31250);  // midi speed
   pinMode(PL_, OUTPUT);  // PL
   pinMode(CP, OUTPUT);  // CP
   pinMode(Q7, INPUT);   // Q7
-  
 }
 
 void loop() {
@@ -32,26 +44,29 @@ void loop() {
 
   for(int i = 0; i < NIN; i++) {
     // read 
-    int v = digitalRead(Q7);
-//    Serial.println(v);
-    inputs[NIN-1-i] = v;
+    int newValue = digitalRead(Q7);
+    int oldValue = inputs[NIN-1-i];
+    if(newValue != oldValue) {
+      if(newValue == HIGH)
+        noteOn(0x90, LOWEST_MIDI_NOTE + NIN - i + 1, 127);
+      else 
+        noteOn(0x90, LOWEST_MIDI_NOTE + NIN - i + 1, 0);      
+      inputs[NIN-1-i] = newValue;    
+      Serial.print("note ");
+      Serial.print(LOWEST_MIDI_NOTE + i);
+      Serial.print(": ");
+      Serial.print(newValue);
+      Serial.println("");
+    }
     // shift
     digitalWrite(CP, LOW);
-//    delay(1);
     digitalWrite(CP, HIGH);
-//    delay(1);
   }
   
-  if(inputs[0] == 1)
-    digitalWrite(TESTLED, HIGH);
-  else
-    digitalWrite(TESTLED, LOW);
-    
-
-  for(int i = 0; i < NIN; i++) {
-//    Serial.print(inputs[i]);
-//    Serial.print(" ");
-  }
-//  Serial.println();
+//  if(inputs[0] == 1)
+//    digitalWrite(TESTLED, HIGH);
+//  else
+//    digitalWrite(TESTLED, LOW);
+//   
   delay(10);
 }
