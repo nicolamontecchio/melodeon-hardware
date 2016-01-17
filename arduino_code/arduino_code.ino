@@ -45,7 +45,7 @@ void loop() {
       if(newValue == HIGH)
         noteOn(0x90, LOWEST_MIDI_NOTE + i, 127);
       else
-        noteOn(0x90, LOWEST_MIDI_NOTE + 1, 0);
+        noteOn(0x90, LOWEST_MIDI_NOTE + i, 0);
       inputs[i] = newValue;
     }
 
