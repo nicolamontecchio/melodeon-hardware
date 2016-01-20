@@ -8,7 +8,7 @@ int Q7 = 6;
 
 SoftwareSerial midiSerial(SERIAL_RX, SERIAL_TX);
 
-int LOWEST_MIDI_NOTE = 29;
+int LOWEST_MIDI_NOTE = 41;
 
 void noteOn(byte cmd, byte data1, byte data2) {
   midiSerial.write(cmd);
@@ -28,11 +28,12 @@ void loop() {
 
   // load in shift register
   digitalWrite(PL_, LOW);
+  delayMicroseconds(500);
   digitalWrite(CP, LOW);
-  delay(1);
+  delayMicroseconds(500);
   digitalWrite(PL_, HIGH);
+  delayMicroseconds(500);
 
-  delay(1);
   int NIN = 8;
   int inputs[NIN];
 
@@ -50,9 +51,12 @@ void loop() {
     }
 
     // shift
+    delayMicroseconds(10);
     digitalWrite(CP, LOW);
+    delayMicroseconds(10);
     digitalWrite(CP, HIGH);
+    delayMicroseconds(10);
   }
 
-  delay(10);
+  delay(2);
 }
