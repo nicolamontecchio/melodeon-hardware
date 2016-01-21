@@ -1,7 +1,7 @@
 #include <SoftwareSerial.h>
 
-int SERIAL_RX = 2;
-int SERIAL_TX = 3;
+int SERIAL_RX = 8;
+int SERIAL_TX = 9;
 int PL_ = 4;
 int CP = 5;
 int Q7 = 6;
@@ -14,6 +14,10 @@ void noteOn(byte cmd, byte data1, byte data2) {
   midiSerial.write(cmd);
   midiSerial.write(data1);
   midiSerial.write(data2);
+  Serial.print("midi: ");
+  Serial.print(data1);
+  Serial.print(" ");
+  Serial.println(data2);
 }
 
 void setup() {
@@ -23,6 +27,9 @@ void setup() {
   pinMode(CP, OUTPUT);          // shift register CP
   pinMode(Q7, INPUT);           // shift register Q7
 }
+
+int NIN = 8;
+int inputs[8];
 
 void loop() {
 
@@ -34,22 +41,23 @@ void loop() {
   digitalWrite(PL_, HIGH);
   delayMicroseconds(500);
 
-  int NIN = 8;
-  int inputs[NIN];
 
   for(int i = NIN - 1; i >= 0; i--) {
 
     // read
     int newValue = digitalRead(Q7);
+
     int oldValue = inputs[i];
     if(newValue != oldValue) {
+      delayMicroseconds(10);    
       if(newValue == HIGH)
         noteOn(0x90, LOWEST_MIDI_NOTE + i, 127);
       else
         noteOn(0x90, LOWEST_MIDI_NOTE + i, 0);
-      inputs[i] = newValue;
     }
-
+    
+    inputs[i] = newValue;
+    
     // shift
     delayMicroseconds(10);
     digitalWrite(CP, LOW);
