@@ -1,5 +1,7 @@
 #include <SoftwareSerial.h>
 
+#define NIN 16
+
 int SERIAL_RX = 8;
 int SERIAL_TX = 9;
 int PL_ = 4;
@@ -9,15 +11,16 @@ int Q7 = 6;
 SoftwareSerial midiSerial(SERIAL_RX, SERIAL_TX);
 
 int LOWEST_MIDI_NOTE = 41;
+int inputs[NIN];
 
 void noteOn(byte cmd, byte data1, byte data2) {
   midiSerial.write(cmd);
   midiSerial.write(data1);
   midiSerial.write(data2);
-  Serial.print("midi: ");
-  Serial.print(data1);
-  Serial.print(" ");
-  Serial.println(data2);
+//  Serial.print("midi: ");
+//  Serial.print(data1);
+//  Serial.print(" ");
+//  Serial.println(data2);
 }
 
 void setup() {
@@ -28,8 +31,6 @@ void setup() {
   pinMode(Q7, INPUT);           // shift register Q7
 }
 
-int NIN = 8;
-int inputs[8];
 
 void loop() {
 
