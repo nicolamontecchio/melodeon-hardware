@@ -1,6 +1,177 @@
 <html>
 
+  <head>
+    <style>
+     body {
+	 max-width:800px;
+	 margin:auto;
+     }
+     img.pad {
+	 padding:20px;
+     }
+    </style>
+  </head>
+
   <body>
-    <h3>hello</h3>
+
+    <h1>A MIDI Melodeon</h1>
+
+    <p>
+      Back in September 2015 I got a <b>MELODEON</b> on Craigslist,
+      and in the next several months I transformed it into a MIDI
+      keyboard.  A Melodeon is a smaller kind of American <a href="https://en.wikipedia.org/wiki/Pump_organ">reed
+      organ</a>, usually having a single manual and no stops;  the one
+      I got is a Lyre-Leg Melodeon, pictured below (after
+      restoration). <a
+      href="https://github.com/nicolamontecchio/melodeon-hardware">Click
+      here for the schematics and microcontroller code.</a>
+    </p>
+    <p><center><img class="pad" src="images/final.jpg"/></center></p>
+
+    <h2>Reed Organ Resources</h2>
+    <p>
+      Here are some general resources about reed organs:
+      <ul>
+	<li><a href="https://en.wikipedia.org/wiki/Pump_organ">Wikipedia page</a> on pump organs, harmoniums and melodeons;</li>
+	<li><a href="http://www.reedsoc.org/">Reed Organ Society</a> with many resources inside;</li>
+	<li><a href="https://openlibrary.org/authors/OL403887A/Robert_F._Gellerman">R. Gellerman's books</a> (I have his 1996 book);</li>
+	<li><a href="http://www.pumporganrestorations.com/types_of_reed_organs.htm">gallery</a> of different types of reed organs.</li>
+      </ul>
+    </p>
+
+    <p>
+      The organ i got was made by the firm of <i>Austin, Parker & Secomb</i>,
+      of Concord NH. I tracked down some information regarding the
+      company with limited success: besides a partial match on
+      <a href="https://books.google.com/books?id=ClDYUXLPhpcC&pg=PA302&lpg=PA302&dq=austin+parker+secomb&source=bl&ots=7ua99Gce9j&sig=_FpbMoeqbjKjFQlWMiuM_u2Zi-o&hl=en&sa=X&ved=0ahUKEwi3yerD9ZfMAhVClB4KHT68ABUQ6AEINTAH#v=onepage&q=austin%20parker%20secomb&f=false">
+	Gellerman's Atlas</a>, I managed to date the organ's
+      manufacturing date in the early 1870s (the firm was apparently
+      active between 1871 and 1873 as can be seen in
+      <a href="https://books.google.com/books?id=FpMBAAAAYAAJ&pg=RA1-PA120&lpg=RA1-PA120&dq=austin+parker+secomb&source=bl&ots=1uW_P4Cqik&sig=M6wNQm0BkY_WTk_TZhSU26Panog&hl=en&sa=X&ved=0ahUKEwi3yerD9ZfMAhVClB4KHT68ABUQ6AEIHjAB#v=onepage&q=austin%20parker%20secomb&f=false">
+	The New Hampshire Register, Farmer's Almanac and Business Directory</a>).
+    </p>
+
+    <h2>Electronics</h2>
+
+    <p>
+      The overall circuitry is roughly split into two parts: measuring
+      each key's up/down state, and converting the keyboard's global
+      state into a MIDI stream.
+    </p>
+
+    <h3>Key sensing</h3>
+    <p>
+      <img class="pad" src="images/hall2binary.png" height="240px" style="float:left;"/>
+      The first part takes care of measuring the state of the keys
+      (pressed or not) at any time. To do so, a magnet is placed under
+      each key and its distance from the keybed is measured by means
+      of a <a
+      href="https://en.wikipedia.org/wiki/Hall_effect_sensor">Hall
+      Effect sensor</a> (a device that varies its output voltage in
+      response to a magnetic field). The continuous output of the
+      sensors is then converted to a binary signal through the use of
+      a comparator.
+    </p>
+    <p>
+      <img src="images/comparator_board_small.jpg"
+	   class="pad" style="float:right;"/>
+      In my project I used AH3503 (linear) Hall Effect sensors and
+     LM339 comparator; both are 5V-powered. The variable resistor that
+     feeds into the negative input of the comparator is used to set
+     the comparator's threshold; this allows one to set the distance
+     at which a key switches between the pressed/depressed state. The
+     board is pictured at the right: each chip has four comparators,
+     so each board processes four keys, while the other pin inputs are
+     for power.
+
+    </p>
+    <p><center></center></p>
+
+    <h3>Logic</h3>
+    <p>
+      The second stage of the circuitry periodically captures a global
+    snapshot of all the sensors' outputs at once and
+    converts it into a <i>serial</i> stream which is fed into an
+    Arduino microcontroller. The serialization is achieved through a
+      series of Parallel Input Serial Output (PISO) <a
+    href="https://en.wikipedia.org/wiki/Shift_register">Shift
+    Registers</a> chained together. Each shift register has an
+    internal 8-bit memory that is set by reading 8 digital inputs in
+    parallel (the key sensing circuit's outputs); multiple shift
+    registers can be chained to form a single arbitrary-sized shift
+    register.
+    </p>
+    <p>
+      The reason for using shift registers is that they enable
+    multiple inputs (61 in this case) to be captured at once and
+    subsequently read one-by-one in a serial fashion, thus needing
+    only a few control lines to be attached to a microcontroller. <a
+    href="https://www.youtube.com/watch?v=7LmBcGiiYwk">This video</a>
+      provides a good tutorial on the inner workings of shift registers.
+    </p>
+    <p>
+      The microcontroller's job is then to periodically take a
+    snapshot of all inputs, and read them back one-by-one while
+    checking whether the state of each key has changed from the
+    previous iteration; in that case a MIDI command (note on/off) is
+    sent to a serial port connected to two GPIO pins on the
+    microcontroller (the physical MIDI output port).
+    </p>
+
+    <h2>Gallery</h2>
+    <div>
+      The keybed, before and after cleaning. Felt is used to dampen
+    the mechanical noise.<br/><br/>
+      <img width="384px" src="images/IMG_0763.JPG"/>
+      <img width="384px" src="images/IMG_0764.JPG"/><br/>
+      <img width="384px" src="images/IMG_0767.JPG"/>
+      <img width="384px" src="images/IMG_0779.JPG"/><br/>
+      <!-- <img width="384px" src="images/IMG_0951.JPG"/> -->
+      <img width="384px" src="images/IMG_0959.JPG"/>
+      <img width="384px" src="images/IMG_1022.JPG"/><br/><br/>
+    </div>
+    <div>
+      Key mechanism: the springs under the keybed support the wooden
+      sticks on which the keys rest.<br/><br/>
+      <img width="384px" src="images/IMG_0783.JPG"/>
+      <img width="384px" src="images/IMG_0786.JPG"/><br/><br/>
+    </div>
+    <div>
+      Magnets drilled under keys.<br/><br/>
+      <img width="384px" src="images/IMG_1046.JPG"/>
+      <img width="384px" src="images/IMG_1047.JPG"/><br/>
+      <img width="772px" src="images/FullSizeRender5.jpg"/><br/><br/>
+    </div>
+    <div>
+      Hall Effect sensors glued to the keybed rails, soldered to solid
+      copper wire providing Vcc and ground. The wires sticking out
+      connect the output of the sensors to the key sensing circuits. <br/><br/>
+      <img width="384px" src="images/IMG_1104.JPG"/>
+      <img width="384px" src="images/IMG_1108.JPG"/><br/>
+      <img width="384px" src="images/IMG_1119.JPG"/>
+      <img width="384px" src="images/IMG_1129.JPG"/><br/><br/>
+    </div>
+    <div>
+      Connecting the circuitry to the keybed. The PCBs were
+      manufactured using a <a
+    href="https://othermachine.co/othermill/features/">Othermill</a>.
+      <br/><br/>
+      <img width="384px" src="images/IMG_1014.JPG"/>
+      <img width="384px" src="images/IMG_1146.JPG"/><br/>
+      <img width="384px" src="images/IMG_1149.JPG"/>
+      <img width="384px" src="images/IMG_1151.JPG"/><br/><br/>
+    </div>
+    <div>
+      Cleaning/polishing the case and the brass parts.
+      <br/><br/>
+      <img width="384px" src="images/IMG_0990.JPG"/>
+      <img width="384px" src="images/IMG_0994.JPG"/><br/>
+      <img width="384px" src="images/IMG_0755.JPG"/>
+      <img width="384px" src="images/IMG_0996.JPG"/>
+      <br/><br/>
+    </div>
+
+
   </body>
+
 </html>
